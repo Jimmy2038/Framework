@@ -13,6 +13,8 @@
     </head>
     <body>
         <h1>Hello World!</h1>
-        <a href="FrontServlet">Click!</a>
+        <a href="Url/FrontServlet">Click!</a>
+        <a href="Url/ajout">ajout</a>
+        
     </body>
 </html>
