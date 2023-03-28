@@ -12,9 +12,7 @@ import annotation.Url;
  * @author rindra
  */
 public class Dept {
-    String mat;
-    String tay;
-    
+
     @Url(name="dept-findAll")
     public Dept[] findAll(){
         return null;
