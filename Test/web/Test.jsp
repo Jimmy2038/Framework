@@ -11,6 +11,10 @@
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     </head>
     <body>
-        
+        <form action="getValues" method="post">
+            <input type="date" name="utilDate">
+            <input type="date" name="sqlDate">
+            <input type="submit" value="valider">
+        </form>
     </body>
 </html>
