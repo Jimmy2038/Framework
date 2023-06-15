@@ -13,8 +13,10 @@ and open the template in the editor.
     <body>
 
         <form action="getValues" method="post">
-            <input type="date" name="utilDate">
-            <input type="date" name="sqlDate">
+            <label>Male</label>
+            <input type="checkbox" name="genre[]" value="male">
+            <label>Femelle</label>
+            <input type="checkbox" name="genre[]" value="femelle">
             <input type="submit" value="OK">
         </form>        
         

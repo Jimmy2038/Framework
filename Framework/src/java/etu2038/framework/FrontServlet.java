@@ -8,11 +8,20 @@ package etu2038.framework;
 import etu2038.framework.AnnotationFonction;
 import etu2038.framework.Mapping;
 import etu2038.framework.ModelView;
+<<<<<<< Updated upstream
+=======
+import etu2038.framework.Parametre;
+import etu2038.framework.UploadFile;
+
+import java.io.ByteArrayOutputStream;
+>>>>>>> Stashed changes
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -24,13 +33,17 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
+import javax.servlet.http.Part;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.annotation.MultipartConfig;
+
 
 /**
  *
  * @author Best
  */
+@MultipartConfig()
 public class FrontServlet extends HttpServlet {
     Map<String, Mapping> MappingUrls = new HashMap<>();
 
@@ -40,7 +53,7 @@ public class FrontServlet extends HttpServlet {
         String p = getInitParameter("test");
         try {
             List<Class<?>> annoted_classes = AnnotationFonction.getClassesWithAnnotation2(AnnotationController.class,
-            p);
+                    p);
             for (Class<?> c : annoted_classes) {
                 Method[] methods = c.getDeclaredMethods();
                 for (Method m : methods) {
@@ -65,8 +78,48 @@ public class FrontServlet extends HttpServlet {
         String temp = argument.substring(0, 1).toUpperCase();
         setter = temp + argument.substring(1);
         System.out.println(setter);
-        return "set"+setter;
+        return "set" + setter;
     }
+
+    private UploadFile fileTraitement(Collection<Part> files, Field field) {
+        UploadFile file = new UploadFile();
+        String name = field.getName();
+        boolean exists = false;
+        String filename = null;
+        Part filepart = null;
+        for (Part part : files) {
+            if (part.getName().equals(name)) {
+                filepart = part;
+                exists = true;
+                break;
+            }
+        }
+        try (InputStream io = filepart.getInputStream()) {
+            ByteArrayOutputStream buffers = new ByteArrayOutputStream();
+            byte[] buffer = new byte[(int) filepart.getSize()];
+            int read;
+            while ((read = io.read(buffer, 0, buffer.length)) != -1) {
+                buffers.write(buffer, 0, read);
+            }
+            file.setNom(this.getFileName(filepart));
+            file.setBytes(buffers.toByteArray());
+            return file;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    private String getFileName(Part part) {
+        String contentDisposition = part.getHeader("content-disposition");
+        String[] parts = contentDisposition.split(";");
+        for (String partStr : parts) {
+            if (partStr.trim().startsWith("filename"))
+                return partStr.substring(partStr.indexOf('=') + 1).trim().replace("\"", "");
+        }
+        return null;
+    }
+    
 
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -89,38 +142,100 @@ public class FrontServlet extends HttpServlet {
                 String className = this.MappingUrls.get(url).getClassName();
                 String method = this.MappingUrls.get(url).getMethod();
                 Class<?> c = Class.forName(className);
+<<<<<<< Updated upstream
                 Method m = c.getDeclaredMethod(method);
+=======
+                System.out.println(method);
+                Method m = null;
+
+                Method [] met = c.getDeclaredMethods();
+                for (int i = 0; i < met.length; i++) {
+                    if(met[i].getName().equals(method)){
+                        m = met[i]; 
+                        break;
+                    } 
+                }                
+
+>>>>>>> Stashed changes
                 Field[] field = c.getDeclaredFields();
                 Object o = c.getConstructor().newInstance();
                 Enumeration<String> enu = request.getParameterNames();
                 List<String> liste = Collections.list(enu);
                 for (int i = 0; i < field.length; i++) {
-                    System.out.println(field[i].getName());
+                    String fieldtab = field[i].getName() + ((field[i].getType().isArray()) ? "[]" : "");
                     for (int j = 0; j < liste.size(); j++) {
-                        if (liste.get(j).trim().equals(field[i].getName().trim())) {
-                            Method me = c.getDeclaredMethod(this.getSetter(field[i].getName()), field[i].getType());
-                            String str = request.getParameter(field[i].getName());
-                            System.out.println( "name = " + field[i].getName());
-                            if(field[i].getType() == java.util.Date.class){
-                                System.out.println("dfdfd");
-                                SimpleDateFormat s = new SimpleDateFormat("yyyy-MM-dd",Locale.ENGLISH);
-                                java.util.Date obj = s.parse(str);
-                                me.invoke(o, obj);
+                        Method me = c.getDeclaredMethod(this.getSetter(field[i].getName()), field[i].getType());
+                        if (liste.get(j).trim().equals(fieldtab.trim())) {
+                            if (field[i].getType().isArray() == false) {
+                                String str = request.getParameter(field[i].getName());
+                                System.out.println("name = " + field[i].getName());
+                                if (field[i].getType() == java.util.Date.class) {
+                                    SimpleDateFormat s = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+                                    java.util.Date obj = s.parse(str);
+                                    me.invoke(o, obj);
+                                } else if (field[i].getType() == java.sql.Date.class) {
+                                    java.sql.Date obj = java.sql.Date.valueOf(str);
+                                    me.invoke(o, obj);
+                                } else {
+                                    Object obj = field[i].getType().getConstructor(String.class).newInstance(str);
+                                    me.invoke(o, obj);
+                                }
+                            } else {
+                                String[] string = request.getParameterValues(fieldtab);
+                                me.invoke(o, (Object) string);
                             }
-                            else if (field[i].getType() == java.sql.Date.class){
-                                java.sql.Date obj = java.sql.Date.valueOf(str);
-                                me.invoke(o, obj);
-                            }
-                            else {
-                                Object obj = field[i].getType().getConstructor(String.class).newInstance(str);
-                                me.invoke(o, obj);
-                            }
-                           
                         }
                     }
                 }
+<<<<<<< Updated upstream
 
                 Object mv = m.invoke(o);
+=======
+                Parameter[] para = m.getParameters();
+                Object[] parametres = new Object[para.length];
+                for (int i = 0; i < para.length; i++) {
+                    if (para[i].isAnnotationPresent(Parametre.class)) {
+                            Parametre pa = para[i].getAnnotation(Parametre.class);
+                            System.out.println(para[i].getAnnotation(Parametre.class));
+                            String p = para[i].getAnnotation(Parametre.class).parametre() + ((para[i].getType().isArray()) ? "[]" : "");
+                            for (int j = 0; j < liste.size(); j++) {
+                                if (liste.get(j).trim().equals(p.trim())) {
+                                    if (para[i].getType().isArray() == false) {
+                                        String str = request.getParameter(pa.parametre());
+                                        if (para[i].getType() == java.util.Date.class) {
+                                            SimpleDateFormat s = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+                                            java.util.Date obj = s.parse(str);
+                                            parametres[i] = obj;
+                                        } else if (para[i].getType() == java.sql.Date.class) {
+                                            java.sql.Date obj = java.sql.Date.valueOf(str);
+                                            parametres[i] = obj;
+                                        } else {
+                                            Object obj = para[i].getType().getConstructor(String.class).newInstance(str);
+                                            parametres[i] = obj; }
+                                    } else {
+                                        String[] string = request.getParameterValues(p);
+                                            parametres[i] = string;
+                                    }
+                                }
+                                        
+                            }
+                    }
+                }
+                try {
+                        Collection<Part> files = request.getParts();
+                        for (Field f : field) {
+                            if (f.getType() == etu2038.framework.UploadFile.class) {
+                                Method meth = c.getMethod(this.getSetter(f.getName()) , f.getType());
+                                Object object = this.fileTraitement(files, f);
+                                meth.invoke(o, object);
+                            }
+                        }
+                    } catch (Exception e) {
+
+                    }
+
+                Object mv = m.invoke(o, parametres);
+>>>>>>> Stashed changes
                 if (mv instanceof ModelView) {
                     ModelView model = (ModelView) mv;
                     RequestDispatcher dispat = request.getRequestDispatcher(model.getView());
