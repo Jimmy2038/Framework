@@ -7,7 +7,7 @@
  package test;
 
 import etu2038.framework.ModelView;
-
+import etu2038.framework.Parametre;
 import etu2038.framework.AnnotationController;
 import etu2038.framework.Url;
 
@@ -57,9 +57,24 @@ public class Classtest {
     @Url(nom="getValues")
     public ModelView getValues() {
         ModelView model = new ModelView();
+<<<<<<< Updated upstream
         System.out.println(getUtilDate());
         System.out.println(getSqlDate());
         model.setView("Test.jsp");
+=======
+        for (int i = 0; i < getGenre().length; i++) {
+            System.out.println(getGenre()[i]);
+        }
+        model.setView("Test.jsp");  
+        return model;
+    }
+
+    @Url(nom="parametre")
+    public ModelView getParametre(@Parametre(parametre = "param") Integer i){
+        ModelView model = new ModelView();
+        System.out.println(i);
+        model.setView("index.jsp");
+>>>>>>> Stashed changes
         return model;
     }
   
