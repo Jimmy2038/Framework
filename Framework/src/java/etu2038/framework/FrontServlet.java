@@ -8,10 +8,12 @@ package etu2038.framework;
 import etu2038.framework.AnnotationFonction;
 import etu2038.framework.Mapping;
 import etu2038.framework.ModelView;
+import etu2038.framework.Parametre;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -89,7 +91,18 @@ public class FrontServlet extends HttpServlet {
                 String className = this.MappingUrls.get(url).getClassName();
                 String method = this.MappingUrls.get(url).getMethod();
                 Class<?> c = Class.forName(className);
-                Method m = c.getDeclaredMethod(method);
+                System.out.println(method);
+                Method m = null;
+
+                Method [] met = c.getDeclaredMethods();
+                for (int i = 0; i < met.length; i++) {
+                    if(met[i].getName().equals(method)){
+                        m = met[i]; 
+                        break;
+                    }
+                    
+                }                
+
                 Field[] field = c.getDeclaredFields();
                 Object o = c.getConstructor().newInstance();
                 Enumeration<String> enu = request.getParameterNames();
@@ -119,8 +132,38 @@ public class FrontServlet extends HttpServlet {
                         }
                     }
                 }
-
-                Object mv = m.invoke(o);
+                Parameter[] para = m.getParameters();
+                Object[] parametres = new Object[para.length];
+                for (int i = 0; i < para.length; i++) {
+                    if (para[i].isAnnotationPresent(Parametre.class)) {
+                            Parametre pa = para[i].getAnnotation(Parametre.class);
+                            System.out.println(para[i].getAnnotation(Parametre.class));
+                            String p = para[i].getAnnotation(Parametre.class).parametre() + ((para[i].getType().isArray()) ? "[]" : "");
+                            for (int j = 0; j < liste.size(); j++) {
+                                if (liste.get(j).trim().equals(p.trim())) {
+                                    if (para[i].getType().isArray() == false) {
+                                        String str = request.getParameter(pa.parametre());
+                                        if (para[i].getType() == java.util.Date.class) {
+                                            SimpleDateFormat s = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+                                            java.util.Date obj = s.parse(str);
+                                            parametres[i] = obj;
+                                        } else if (para[i].getType() == java.sql.Date.class) {
+                                            java.sql.Date obj = java.sql.Date.valueOf(str);
+                                            parametres[i] = obj;
+                                        } else {
+                                            Object obj = para[i].getType().getConstructor(String.class).newInstance(str);
+                                            parametres[i] = obj; }
+                                    } else {
+                                        String[] string = request.getParameterValues(p);
+                                            parametres[i] = string;
+                                    }
+                                }
+                                        
+                            }
+                    }
+                }
+                
+                Object mv = m.invoke(o, parametres);
                 if (mv instanceof ModelView) {
                     ModelView model = (ModelView) mv;
                     RequestDispatcher dispat = request.getRequestDispatcher(model.getView());
